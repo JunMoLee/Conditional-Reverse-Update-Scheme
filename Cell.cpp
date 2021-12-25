@@ -471,6 +471,8 @@ void RealDevice::Write(int iteration, double deltaWeightNormalized, double weigh
 	    }
 	
 	bool GpGnCell = true;
+	
+	
 	if (deltaWeightNormalized > 0) {	// LTP weight update
 		
 		
@@ -660,7 +662,7 @@ void RealDevice::Write(int iteration, double deltaWeightNormalized, double weigh
 			
 
 	}
-
+	if (numPulse==0) skipcount=1;
 	/* Cycle-to-cycle variation */
 
 	extern std::mt19937 gen;
