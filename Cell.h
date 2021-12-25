@@ -145,6 +145,7 @@ public:
 	double PWstepLTD;   // Write pulse width for LTD or weight decrease (s)
 	double writeVoltageSquareSum;   // Sum of V^2 of non-identical pulses (for weight update energy calculation in subcircuits)
 	
+	
 
 
 	virtual double Read(double voltage) = 0;
@@ -198,6 +199,7 @@ public:
 	double sigmaCtoC;	// Sigma of cycle-to-cycle variation on weight update
 	double refGp;
 	double refGn;
+	double skipcount;
 	/*PCM*/
 	double NL_LTP_Gp;
 	double NL_LTD_Gp;
