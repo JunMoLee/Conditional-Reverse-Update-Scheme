@@ -67,9 +67,9 @@ Param::Param() {
 	FullRefresh= 0;
 	Reference = 0;
 	RefPeriod = 100;
-	Record = 1;
+	Record = 0;
 	RecordPeriod = 200;
-	WeightTrack = 1;
+	WeightTrack = 0;
 	WeightTrackPeriod=200;
 	c2cvariation=0;
 	LocationTrack=1;
@@ -156,13 +156,13 @@ Gth2 = Gthlist[gths][1];
 const int
 select=0;
 	
-double plist [7] ={3, -9, 0.3, 0, 2, 2, 1};
+double plist [7] ={1, -9, 0.3, 0, 2, 2, 1};
 param_gp=plist[0];
 param_gn=plist[1];
 alpha1=plist[2];
 Reference=plist[3];
 RefPeriod=100;
-double scan [8] = {2.6,2.8,3.0,3.2,3.4,3.6,3.8,4.0};
+double scan [3] = {1,3,5};
 newUpdateRate=int(plist[5]);
 Gth1  =1+(scan[select]);
 	
