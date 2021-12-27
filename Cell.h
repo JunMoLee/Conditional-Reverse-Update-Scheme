@@ -200,6 +200,7 @@ public:
 	double refGp;
 	double refGn;
 	double skipcount;
+	double zeropulsecount;
 	/*PCM*/
 	double NL_LTP_Gp;
 	double NL_LTD_Gp;
