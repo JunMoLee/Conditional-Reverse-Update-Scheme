@@ -1227,7 +1227,7 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 						{location2weight +=weight2[j][k];
 						location2count++;
 						location2count_skip= location2count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
-						location2count_zero= location2count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecountt;}
+						location2count_zero= location2count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;}
 						else if(static_cast<RealDevice*>(arrayIH->cell[j][k])->location == 3)
 						{
 						location3weight +=weight2[j][k];
