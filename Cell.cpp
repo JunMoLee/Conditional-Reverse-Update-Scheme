@@ -453,6 +453,7 @@ void RealDevice::Write(int iteration, double deltaWeightNormalized, double weigh
 	loc2noise=0;
 	loc3noise=0;
 	skipcount=0;
+	zeropulsecount=0;
 
 	
 	int epoch = int( iteration/8000);
@@ -662,7 +663,7 @@ void RealDevice::Write(int iteration, double deltaWeightNormalized, double weigh
 			
 
 	}
-	if (numPulse==0) skipcount=1;
+	if (skipcount==0 && numPulse==0) zeropulsecount=1;
 	/* Cycle-to-cycle variation */
 
 	extern std::mt19937 gen;
