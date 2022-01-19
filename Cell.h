@@ -152,12 +152,12 @@ public:
 	virtual void Write(int iteration, double deltaWeightNormalized, double weight, double minWeight, double maxWeight) = 0;
 	double GetMaxReadCurrent(){
 		if (cmosAccess)
-			return readVoltage * 1 / (1 / avgMaxConductance);//+resistanceAccess);
+			return readVoltage *  avgMaxConductance;//+resistanceAccess);
       else 
           return readVoltage * avgMaxConductance;}
 	double GetMinReadCurrent(){
 		if (cmosAccess)
-			return readVoltage * 1 / (1 / avgMinConductance);//+resistanceAccess);
+			return readVoltage *  avgMinConductance;//+resistanceAccess);
       else
           return readVoltage * avgMinConductance;}
 	void WriteEnergyCalculation(double wireCapCol);
