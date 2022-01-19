@@ -91,7 +91,7 @@ double Array::ReadCell(int x, int y, char* mode) {
 			} 
             else 
             {
-				cellCurrent = readVoltage / (1 / static_cast<eNVM*>(cell[x][y])->conductance);//+ totalWireResistance);
+				cellCurrent = readVoltage *static_cast<eNVM*>(cell[x][y])->conductance;//+ totalWireResistance);
 			}
 		}
         //printf("The current is %.4e\n",cellCurrent);
