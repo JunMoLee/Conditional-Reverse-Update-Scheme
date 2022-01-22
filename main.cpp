@@ -141,11 +141,13 @@ int main() {
 		int reverseupdate = param->ReverseUpdate;
 		int fullrefresh = param ->FullRefresh;
 		int refreshperiod = param -> RefreshRate;
-		double Gth1 = param -> Gth1-1;
-	  	double Gth2 = param -> Gth2-1;
+		double Gth1 = param -> Gth1;
+	  	double Gth2 = param -> Gth2;
 		double revlr = LA / param -> ratio ;
 		int refperiod = param->RefPeriod;
 		int Reference = param -> Reference;
+		double maxaccuracy=0;
+		
 
 														               
 		printf("opt: %s  NL_LTP_Gp:%.1f NL_LTD_Gp:%.1f NL_LTP_Gn:%.1f NL_LTD_Gn:%.1f CSpP: %d CSpD: %d CSnP: %d CSnD: %d normal LR %.2f reverse LR %.2f\n", param->optimization_type, NL_LTP_Gp, NL_LTD_Gp, NL_LTP_Gn, NL_LTD_Gn, kp, kd, knp, knd, LA, revlr);
@@ -157,16 +159,29 @@ int main() {
 		read.open(str,fstream::app);                                                         
 																	
 		for (int i=1; i<=100; i++) {
+
+
 		cout << "Training Epoch : " << i << endl; 
 		Train(i, param->numTrainImagesPerEpoch, param->interNumEpochs,param->optimization_type);
 		if (!param->useHardwareInTraining && param->useHardwareInTestingFF) { WeightToConductance(); }
 		Validate();
+		// maximum accuracy 
+		if (i==1)
+		maxaccuracy=(double)correct/param->numMnistTestImages*100;
+		else
+		{
+			if ((double)correct/param->numMnistTestImages*100 > maxaccuracy)
+			{
+				maxaccuracy=(double)correct/param->numMnistTestImages*100;
+			}
+		}
+
 		if(write_or_not){
 
-		read <<param->optimization_type<<", "<<NL_LTP_Gp<<", "<<NL_LTD_Gp<<", "<<NL_LTP_Gn<<", "<<NL_LTD_Gn<<", "<<kp<<", "<<kd<<", "<<knp<<", "<<knd<<", "<<LA<<", "<<revlr<<", " <<reverseupdate<<", "<<reverseperiod<<", "<<refperiod<<", "<<fullrefresh<<", "<<refreshperiod<<", "<<i*param->interNumEpochs<< ", "<<(double)correct/param->numMnistTestImages*100 << endl;
+		read <<param->optimization_type<<", "<<NL_LTP_Gp<<", "<<NL_LTD_Gp<<", "<<NL_LTP_Gn<<", "<<NL_LTD_Gn<<", "<<kp<<", "<<kd<<", "<<knp<<", "<<knd<<", "<<LA<<", "<<revlr<<", " <<reverseupdate<<", "<<reverseperiod<<", "<<refperiod<<", "<<fullrefresh<<", "<<refreshperiod<<", "<<i*param->interNumEpochs<< ", "<<param->errorcount<<", "<<(double)correct/param->numMnistTestImages*100 <<", "<<  maxaccuracy<< endl;
 		
 		}
-		printf("%.2f\n", (double)correct/param->numMnistTestImages*100);
+		printf("%.2f, max: %.2f, errorcount: %.2f \n", (double)correct/param->numMnistTestImages*100, maxaccuracy, param->errorcount);
 		/*printf("\tRead latency=%.4e s\n", subArrayIH->readLatency + subArrayHO->readLatency);
 		printf("\tWrite latency=%.4e s\n", subArrayIH->writeLatency + subArrayHO->writeLatency);
 		printf("\tRead energy=%.4e J\n", arrayIH->readEnergy + subArrayIH->readDynamicEnergy + arrayHO->readEnergy + subArrayHO->readDynamicEnergy);
