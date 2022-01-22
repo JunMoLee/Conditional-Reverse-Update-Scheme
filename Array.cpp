@@ -211,7 +211,7 @@ void Array::WriteCell(int x, int y, double deltaWeight, double weight, double ma
                         std::normal_distribution<double> *gaussian_dist3;
                                                 gaussian_dist3 = new std::normal_distribution<double>(0, sigmaCtoC);    // Set up mean and stddev for cycle-to-cycle weight update vairation
                                          std::mt19937 gen;
-                                         double numPulse = truncate(deltaWeight, 100);
+                                         double numPulse = truncate(deltaWeight, 100)*100;
                                          variation = (*gaussian_dist3)(gen)*sqrt(abs(numPulse));
                 }
 
