@@ -63,8 +63,8 @@ Param::Param() {
     /*Optimization method 
     Available option include: "SGD", "Momentum", "Adagrad", "RMSprop" and "Adam"*/
     optimization_type = "SGD";
-        ReverseUpdate = 1;
-	FullRefresh= 0;
+        ReverseUpdate = 0;
+	FullRefresh= 1;
 	Reference = 0;
 	RefPeriod = 100;
 	Record = 0;
@@ -76,7 +76,7 @@ Param::Param() {
 	LocationTrackPeriod=200;
         const double
         cratioo=6;
-cratio=cratioo;
+	cratio=cratioo;
 	Gth1 = -1;
 	Gth2 = 9;
 
@@ -101,8 +101,11 @@ cratio=cratioo;
 	arrayWireWidth = 100;	// Array wire width (nm)
 	processNode = 32;	// Technology node (nm)
 	clkFreq = 2e9;		// Clock frequency (Hz)
-
-	RefreshRate = 2;
+const int
+ref=1;
+	RefreshRate = pow(2,ref);
+	
+	
 	const int 
 	nur=2;
 	newUpdateRate = nur; // rate of new update algorithm implementation (per # of images)
@@ -156,7 +159,7 @@ Gth2 = Gthlist[gths][1];
 const int
 select=0;
 	
-double plist [7] ={1, -9, 0.3, 0, 2, 2, 1};
+double plist [7] ={1, -9, 0.15, 0, 2, 2, 1};
 param_gp=plist[0];
 param_gn=plist[1];
 alpha1=plist[2];
