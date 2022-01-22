@@ -159,7 +159,7 @@ Gth2 = Gthlist[gths][1];
 const int
 select=0;
 	
-double plist [7] ={1, -9, 0.15, 0, 2, 2, 1};
+double plist [7] ={1, -9, 0.25, 0, 2, 2, 1};
 param_gp=plist[0];
 param_gn=plist[1];
 alpha1=plist[2];
