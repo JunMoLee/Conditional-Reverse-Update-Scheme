@@ -72,7 +72,7 @@ Param::Param() {
 	WeightTrack = 0;
 	WeightTrackPeriod=200;
 	c2cvariation=0;
-	LocationTrack=1;
+	LocationTrack=0;
 	LocationTrackPeriod=200;
         const double
         cratioo=6;
