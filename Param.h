@@ -60,7 +60,7 @@ public:
 	double alpha2;		// Learning rate for the synapses from hidden to output layer
 	double maxWeight;	// Upper bound of weight value
 	double minWeight;	// Lower bound of weight value
-    char* optimization_type;
+    	char* optimization_type;
 	double Gth1;
 	double Gth2;
 	double ratio;
@@ -79,7 +79,10 @@ public:
 	int HOnoupdate = 0;
 	int LocationTrack=1;
 	int LocationTrackPeriod=200;
-double cratio=15;
+	double cratio=15;
+	double maxaccuracy=0;
+	double errorcount=0;
+	
 	/* Hardware parameters */
 	bool useHardwareInTrainingFF;   // Use hardware in the feed forward part of training or not (true: realistic hardware, false: ideal software)
 	bool useHardwareInTrainingWU;   // Use hardware in the weight update part of training or not (true: realistic hardware, false: ideal software)
