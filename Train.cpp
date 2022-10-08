@@ -55,6 +55,7 @@ using namespace std;
 
 extern Param *param;
 
+
 extern std::vector< std::vector<double> > Input;
 extern std::vector< std::vector<int> > dInput;
 extern std::vector< std::vector<double> > Output;
@@ -108,10 +109,11 @@ double Momentum(double gradient, double learning_rate, double momentumPrev, doub
 double Adagrad(double gradient, double learning_rate, double gradSquare, double EPSILON=1E-1);
 double RMSprop(double gradient, double learning_rate, double gradSquarePrev,double GAMA=0.5, double EPSILON=2E-1);
 double Adam(double gradient, double learning_rate, double momentumPreV, double velocityPrev, double BETA1=0.1, double BETA2=0.7, double EPSILON=2E-1);
-	double pospulsecounttotal = 0;
-	double pospulsesumtotal  =0;
-		double negpulsecounttotal = 0;
-	double negpulsesumtotal  =0;
+
+double pospulsecounttotal = 0;
+double pospulsesumtotal  =0;
+double negpulsecounttotal = 0;
+double negpulsesumtotal  =0;
 double loc0noiseIH =0;
 double loc1noiseIH =0;
 double loc2noiseIH =0;
@@ -120,12 +122,11 @@ double loc0noiseHO =0;
 double loc1noiseHO =0;
 double loc2noiseHO =0;
 double loc3noiseHO=0;
-
-
 double relativeratioIH = 0;
 double relativeratioHO = 0;
 double zeroupdateIH =0;
 double zeroupdateHO =0;
+
 void Train(int iter, const int numTrain, const int epochs, char *optimization_type) {
 int numBatchReadSynapse;	    // # of read synapses in a batch read operation (decide later)
 int numBatchWriteSynapse;	// # of write synapses in a batch write operation (decide later)
@@ -143,23 +144,23 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 
 
 		double NL_LTP_Gp = static_cast<RealDevice*>(arrayIH->cell[0][0])->NL_LTP_Gp;
-	        double NL_LTD_Gp = static_cast<RealDevice*>(arrayIH->cell[0][0])->NL_LTD_Gp;
+	    double NL_LTD_Gp = static_cast<RealDevice*>(arrayIH->cell[0][0])->NL_LTD_Gp;
 		double NL_LTP_Gn = static_cast<RealDevice*>(arrayIH->cell[0][0])->NL_LTP_Gn;
-	        double NL_LTD_Gn = static_cast<RealDevice*>(arrayIH->cell[0][0])->NL_LTD_Gn;
+	    double NL_LTD_Gn = static_cast<RealDevice*>(arrayIH->cell[0][0])->NL_LTD_Gn;
 		int kp = static_cast<RealDevice*>(arrayIH->cell[0][0])->maxNumLevelpLTP;
 		int kd = static_cast<RealDevice*>(arrayIH->cell[0][0])->maxNumLevelpLTD;
 		int knp = static_cast<RealDevice*>(arrayIH->cell[0][0])->maxNumLevelnLTP;
 		int knd = static_cast<RealDevice*>(arrayIH->cell[0][0])->maxNumLevelnLTD;
 		double pof = static_cast<RealDevice*>(arrayIH->cell[0][0])->pmaxConductance/static_cast<RealDevice*>(arrayIH->cell[0][0])->pminConductance;
 		double nof = static_cast<RealDevice*>(arrayIH->cell[0][0])->nmaxConductance/static_cast<RealDevice*>(arrayIH->cell[0][0])->nminConductance;
-	        double LA = param->alpha1;
-	        int reverseperiod = param->newUpdateRate;
+	    double LA = param->alpha1;
+	    int reverseperiod = param->newUpdateRate;
 		int reverseupdate = param->ReverseUpdate;
 		int fullrefresh = param ->FullRefresh;
 		int refreshperiod = param -> RefreshRate;
-		double Gth1 = param -> Gth1-1;
-	  	double Gth2 = param -> Gth2-1;
-		double revlr = LA / param -> ratio ;
+		double Gth1 = param -> Gth1;
+	  	double Gth2 = param -> Gth2;
+		double revlr = LA / param -> ratio;
 		int refperiod = param->RefPeriod;
 		int Reference = param -> Reference;
 	
@@ -170,7 +171,7 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 			
 			int iteration = numTrain * (iter-1) + batchSize;
 						
-			if (  iteration == 0 )
+			if (iteration == 0)
 			{
 				param-> IHnoise=0;
 				param->HOnoise=0;
@@ -178,10 +179,14 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 				param->HOcosine =0;
 				
 			}
+			param->epoch_cell = int(iteration/8000)+1;	
+			
+			
 
-			int error =0;
-			int looptrue=1;
 			int i = rand() % param->numMnistTrainImages;
+			// int error =0;
+			// int looptrue=1;
+			/*
 			while(looptrue){
 			
 			for (int k=0; k<param->nInput; k++) {
@@ -198,16 +203,17 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 					looptrue=0;
 				}
 			}
+			*/
 			
 
-                        //int i = 1;       // use this value for debug
+            //int i = 1;       // use this value for debug
 			// Forward propagation
 			/* First layer (input layer to the hidden layer) */
 			std::fill_n(outN1, param->nHide, 0);
 			std::fill_n(a1, param->nHide, 0);
 			
           if (param->useHardwareInTrainingFF) {   // Hardware
-		double sumArrayReadEnergy = 0;   // Use a temporary variable here since OpenMP does not support reduction on class member
+				double sumArrayReadEnergy = 0;   // Use a temporary variable here since OpenMP does not support reduction on class member
                 double readVoltage; 
                 double readPulseWidth;
 
@@ -244,11 +250,11 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 					           for (int k=0; k<param->nInput; k++) {
 								if ((dInput[i][k]>>n) & 1) {    // if the nth bit of dInput[i][k] is 1
 						                 Isum += arrayIH->ReadCell(j,k);
-                                                                 inputSum += arrayIH->GetMediumCellReadCurrent(j,k);    // get current of Dummy Column as reference
-								 sumArrayReadEnergy += arrayIH->wireCapRow * readVoltage * readVoltage; // Selected BLs (1T1R) or Selected WLs (cross-point)
+                                        inputSum += arrayIH->GetMediumCellReadCurrent(j,k);    // get current of Dummy Column as reference
+								 		sumArrayReadEnergy += arrayIH->wireCapRow * readVoltage * readVoltage; // Selected BLs (1T1R) or Selected WLs (cross-point)
 								}
-						IsumMax += arrayIH->GetMaxCellReadCurrent(j,k);
-                                                IsumMin += arrayIH->GetMinCellReadCurrent(j,k);
+								IsumMax += arrayIH->GetMaxCellReadCurrent(j,k);
+                                IsumMin += arrayIH->GetMinCellReadCurrent(j,k);
 							}
 						
 						sumArrayReadEnergy += Isum * readVoltage * readPulseWidth;
@@ -265,27 +271,27 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
                                                         }
                                                  }
 					     
-                                               if(digitalNVM && parallelRead) // parallel read-out for DigitalNVM 
+                           if(digitalNVM && parallelRead) // parallel read-out for DigitalNVM 
 					       {
                                            //printf("This is parallel read-out\n");
                                                double Imax = static_cast<DigitalNVM*>(arrayIH->cell[0][0])->avgMaxConductance*static_cast<DigitalNVM*>(arrayIH->cell[0][0])->readVoltage;
                                                double Imin = static_cast<DigitalNVM*>(arrayIH->cell[0][0])->avgMinConductance*static_cast<DigitalNVM*>(arrayIH->cell[0][0])->readVoltage;
                                                double Isum = 0;    // weighted sum current
-					       double IsumMax = 0; // Max weighted sum current
-					       double inputSum = 0;    // Weighted sum current of input vector * weight=1 column
+					      					   double IsumMax = 0; // Max weighted sum current
+					       					   double inputSum = 0;    // Weighted sum current of input vector * weight=1 column
                                                int Dsum=0;
                                                int DsumMax = 0;
                                                int Dref = 0;
 					       
                                         for (int w=0;w<param->numWeightBit;w++){
-                                           int colIndex = (j+1) * param->numWeightBit - (w+1);  // w=0 is the LSB
-					     for (int k=0; k<param->nInput; k++) {
+                                        	int colIndex = (j+1) * param->numWeightBit - (w+1);  // w=0 is the LSB
+					     					for (int k=0; k<param->nInput; k++) {
 						     
-						if((dInput[i][k]>>n) & 1){ // accumulate the current along a column
-						  Isum += static_cast<DigitalNVM*>(arrayIH->cell[colIndex][k])->conductance*static_cast<DigitalNVM*>(arrayIH->cell[colIndex ][k])->readVoltage;
-                                                  inputSum += static_cast<DigitalNVM*>(arrayIH->cell[arrayIH->refColumnNumber][k])->conductance*static_cast<DigitalNVM*>(arrayIH->cell[arrayIH->refColumnNumber][k])->readVoltage;
-					        }
-					     }
+												if((dInput[i][k]>>n) & 1){ // accumulate the current along a column
+						  							Isum += static_cast<DigitalNVM*>(arrayIH->cell[colIndex][k])->conductance*static_cast<DigitalNVM*>(arrayIH->cell[colIndex ][k])->readVoltage;
+                                        			inputSum += static_cast<DigitalNVM*>(arrayIH->cell[arrayIH->refColumnNumber][k])->conductance*static_cast<DigitalNVM*>(arrayIH->cell[arrayIH->refColumnNumber][k])->readVoltage;
+					        					}
+					     					}
 
                                          int outputDigits = (int) (Isum /(Imax-Imin)); // the output at the ADC of this column // basically, this is the number of "1" in the partial sum of this column                                                                                                               
                                          int outputDigitsRef = (int) (inputSum/(Imax-Imin));
@@ -296,7 +302,7 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
                                          inputSum=0;
                                          Dsum += outputDigits*(int) pow(2,w);  // get the weight represented by the column
                                          DsumMax += param->nInput*(int) pow(2,w); // the maximum weight that can be represented by this column
-                                      }
+                                    	}
 					       
                                         sumArrayReadEnergy += static_cast<DigitalNVM*>(arrayHO->cell[0][0])->readEnergy * arrayHO->numCellPerSynapse * arrayHO->arrayRowSize;
                                         outN1[j] += (double)(Dsum - Dref*(pow(2,param->numWeightBit-1)-1)) / DsumMax * pSumMaxAlgorithm;
@@ -325,7 +331,7 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 						}
 					}
 					a1[j] = sigmoid(outN1[j]);
-					da1[j] = round_th(a1[j]*(param->numInputLevel-1), param->Hthreshold);
+					da1[j] = round_th(a1[j]*(2-1), param->Hthreshold);
 				}
 				arrayIH->readEnergy += sumArrayReadEnergy;
 
@@ -383,12 +389,12 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 						}
 					}
                     
-					for (int n=0; n<param->numBitInput; n++) {
-						double pSumMaxAlgorithm = pow(2, n) / (param->numInputLevel - 1) * arrayHO->arrayRowSize;    // Max algorithm partial weighted sum for the nth vector bit (if both max input value and max weight are 1)
+					for (int n=0; n<1; n++) {
+						double pSumMaxAlgorithm = pow(2, n) / (2 - 1) * arrayHO->arrayRowSize;    // Max algorithm partial weighted sum for the nth vector bit (if both max input value and max weight are 1)
 						if (AnalogNVM *temp = dynamic_cast<AnalogNVM*>(arrayHO->cell[0][0])) {  // Analog eNVM
 							double Isum = 0;    // weighted sum current
 							double IsumMax = 0; // Max weighted sum current
-              double IsumMin = 0; 
+              				double IsumMin = 0; 
 							double a1Sum = 0;    // Weighted sum current of input vector * weight=1 column                            
 							for (int k=0; k<param->nHide; k++) {
 								if ((da1[k]>>n) & 1) {    // if the nth bit of da1[k] is 1  
@@ -1131,6 +1137,7 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 			
 
 			/// conductance saturation management: Full-Reset /// 
+
 			if(param -> FullRefresh){
 				
 			if (iteration % param->RefreshRate == (param->RefreshRate-1)) { //ERASE
@@ -1162,6 +1169,9 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 			}
 				
 			}
+
+			/* Below part is for algorithmic analysis */
+
 			/* location track */
 			if(param -> LocationTrack){
 				
@@ -1172,38 +1182,39 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 				double location1count=0;
 				double location2count=0;
 				double location3count=0;
-					double location0count_skip=0;
-					double location1count_skip=0;
-					double location2count_skip=0;
-					double location3count_skip=0;
-						double location0count_zero=0;
-					double location1count_zero=0;
-					double location2count_zero=0;
-					double location3count_zero=0;
+				double location0count_skip=0;
+				double location1count_skip=0;
+				double location2count_skip=0;
+				double location3count_skip=0;
+				double location0count_zero=0;
+				double location1count_zero=0;
+				double location2count_zero=0;
+				double location3count_zero=0;
 				double location0weight=0;
 				double location1weight=0;
 				double location2weight=0;
 				double location3weight=0;
+				
 				for (int j = 0; j < param->nHide; j++) {
 					for (int k = 0; k < param->nInput; k++) {
 						 if(static_cast<RealDevice*>(arrayIH->cell[j][k])->location == 0)
-						 {location0weight +=weight1[j][k];
-						location0count++;
-						 location0count_skip= location0count_skip+static_cast<RealDevice*>(arrayIH->cell[j][k])->skipcount;
-						  location0count_zero= location0count_zero+static_cast<RealDevice*>(arrayIH->cell[j][k])->zeropulsecount;}
+						 	{location0weight +=weight1[j][k];
+							location0count++;
+						 	location0count_skip= location0count_skip+static_cast<RealDevice*>(arrayIH->cell[j][k])->skipcount;
+						  	location0count_zero= location0count_zero+static_cast<RealDevice*>(arrayIH->cell[j][k])->zeropulsecount;}
 						 else if(static_cast<RealDevice*>(arrayIH->cell[j][k])->location == 1)
-							 {location1weight +=weight1[j][k];
-						location1count++;
-							 location1count_skip= location1count_skip+static_cast<RealDevice*>(arrayIH->cell[j][k])->skipcount;
-							 location1count_zero= location1count_zero+static_cast<RealDevice*>(arrayIH->cell[j][k])->zeropulsecount;}
+							{location1weight +=weight1[j][k];
+							location1count++;
+							location1count_skip= location1count_skip+static_cast<RealDevice*>(arrayIH->cell[j][k])->skipcount;
+							location1count_zero= location1count_zero+static_cast<RealDevice*>(arrayIH->cell[j][k])->zeropulsecount;}
 						else if(static_cast<RealDevice*>(arrayIH->cell[j][k])->location == 2)
-						{location2weight +=weight1[j][k];
-						location2count++;
-						location2count_skip= location2count_skip+static_cast<RealDevice*>(arrayIH->cell[j][k])->skipcount;
-						location2count_zero= location2count_zero+static_cast<RealDevice*>(arrayIH->cell[j][k])->zeropulsecount;}
+							{location2weight +=weight1[j][k];
+							location2count++;
+							location2count_skip= location2count_skip+static_cast<RealDevice*>(arrayIH->cell[j][k])->skipcount;
+							location2count_zero= location2count_zero+static_cast<RealDevice*>(arrayIH->cell[j][k])->zeropulsecount;}
 						else if(static_cast<RealDevice*>(arrayIH->cell[j][k])->location == 3){
-							 location3weight +=weight1[j][k];
-						location3count++;
+							location3weight +=weight1[j][k];
+							location3count++;
 							location3count_skip= location3count_skip+static_cast<RealDevice*>(arrayIH->cell[j][k])->skipcount;
 							location3count_zero= location3count_zero+static_cast<RealDevice*>(arrayIH->cell[j][k])->zeropulsecount;
 						}
@@ -1214,30 +1225,32 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 				for (int j = 0; j < param->nOutput; j++) {
 					for (int k = 0; k < param->nHide; k++) {
 						if(static_cast<RealDevice*>(arrayHO->cell[j][k])->location == 0)
-						{location0weight +=weight2[j][k];
-						location0count++;
-						location0count_skip= location0count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
-						location0count_zero= location0count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;}
+							{location0weight +=weight2[j][k];
+							location0count++;
+							location0count_skip= location0count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
+							location0count_zero= location0count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;}
 						 else if(static_cast<RealDevice*>(arrayHO->cell[j][k])->location == 1)
-						 {location1weight +=weight2[j][k];
-						location1count++;
-						 location1count_skip= location1count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
-						 location1count_zero= location1count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;}
+						 	{location1weight +=weight2[j][k];
+							location1count++;
+						 	location1count_skip= location1count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
+						 	location1count_zero= location1count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;}
 						else if(static_cast<RealDevice*>(arrayHO->cell[j][k])->location == 2)
-						{location2weight +=weight2[j][k];
-						location2count++;
-						location2count_skip= location2count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
-						location2count_zero= location2count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;}
+							{location2weight +=weight2[j][k];
+							location2count++;
+							location2count_skip= location2count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
+							location2count_zero= location2count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;}
 						else if(static_cast<RealDevice*>(arrayIH->cell[j][k])->location == 3)
 						{
-						location3weight +=weight2[j][k];
-						location3count++;
-						location3count_skip= location3count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
-						location3count_zero= location3count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;
+							location3weight +=weight2[j][k];
+							location3count++;
+							location3count_skip= location3count_skip+static_cast<RealDevice*>(arrayHO->cell[j][k])->skipcount;
+							location3count_zero= location3count_zero+static_cast<RealDevice*>(arrayHO->cell[j][k])->zeropulsecount;
 						}
 						
 					}
 				}
+
+			// For CSV extraction of location record
 			fstream read;
 			char str[1024];
 			sprintf(str, "location_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
@@ -1260,117 +1273,43 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 
 			/* noise record */	
 			if(param -> Record){
-			double IHupdatecount =0;
-			double HOupdatecount =0;
-			double IHnoiseunit = 0;
-			double HOnoiseunit = 0;
-			double IHcosineunit = 0;
-			double HOcosineunit  = 0;
-			double realpulsesum = 0;
-			double noisypulsesum = 0;
-			double multsum = 0;
-			double loc0noiseunit =0;
-			double loc1noiseunit =0;
-			double loc2noiseunit =0;
-			double loc3noiseunit =0;			
-				
+				double IHupdatecount =0;
+				double HOupdatecount =0;
+				double IHnoiseunit = 0;
+				double HOnoiseunit = 0;
+				double IHcosineunit = 0;
+				double HOcosineunit  = 0;
+				double realpulsesum = 0;
+				double noisypulsesum = 0;
+				double multsum = 0;
+				double loc0noiseunit =0;
+				double loc1noiseunit =0;
+				double loc2noiseunit =0;
+				double loc3noiseunit =0;			
+					
 				int epoch = int(iteration/8000)+1;		
-			for (int j = 0; j < param->nHide; j++) {
-				
 
-			double noisesum =0;
+				for (int j = 0; j < param->nHide; j++) {
+					
+				double noisesum =0;
+				
+					for (int k = 0; k < param->nInput; k++) {
+						// printf("%.3f", static_cast<RealDevice*>(arrayIH->cell[j][k])->realpulse);
+						realpulsesum = realpulsesum + static_cast<RealDevice*>(arrayIH->cell[j][k])->realpulse;
+						noisypulsesum  = noisypulsesum  + static_cast<RealDevice*>(arrayIH->cell[j][k])->noisypulse ;
+						multsum = multsum + static_cast<RealDevice*>(arrayIH->cell[j][k])->mult;
+						noisesum = noisesum + static_cast<RealDevice*>(arrayIH->cell[j][k])->noise;
+						loc0noiseunit = loc0noiseunit + static_cast<RealDevice*>(arrayIH->cell[j][k])->loc0noise;
+						loc1noiseunit = loc1noiseunit + static_cast<RealDevice*>(arrayIH->cell[j][k])->loc1noise;
+						loc2noiseunit = loc2noiseunit + static_cast<RealDevice*>(arrayIH->cell[j][k])->loc2noise;
+						loc3noiseunit = loc3noiseunit + static_cast<RealDevice*>(arrayIH->cell[j][k])->loc3noise;
+					}
+					IHnoiseunit += noisesum;
 
-				
-				
-				for (int k = 0; k < param->nInput; k++) {
-					// printf("%.3f", static_cast<RealDevice*>(arrayIH->cell[j][k])->realpulse);
-					realpulsesum = realpulsesum + static_cast<RealDevice*>(arrayIH->cell[j][k])->realpulse;
-					noisypulsesum  = noisypulsesum  + static_cast<RealDevice*>(arrayIH->cell[j][k])->noisypulse ;
-					multsum = multsum + static_cast<RealDevice*>(arrayIH->cell[j][k])->mult;
-					noisesum = noisesum + static_cast<RealDevice*>(arrayIH->cell[j][k])->noise;
-					loc0noiseunit = loc0noiseunit + static_cast<RealDevice*>(arrayIH->cell[j][k])->loc0noise;
-					loc1noiseunit = loc1noiseunit + static_cast<RealDevice*>(arrayIH->cell[j][k])->loc1noise;
-					loc2noiseunit = loc2noiseunit + static_cast<RealDevice*>(arrayIH->cell[j][k])->loc2noise;
-					loc3noiseunit = loc3noiseunit + static_cast<RealDevice*>(arrayIH->cell[j][k])->loc3noise;
-					/*
-					double k1 = static_cast<RealDevice*>(arrayIH->cell[j][k])->pospulsecount;
-					double k2 = static_cast<RealDevice*>(arrayIH->cell[j][k])->pospulsesum;
-					double k3 =static_cast<RealDevice*>(arrayIH->cell[j][k])->negpulsecount;
-					double k4 =static_cast<RealDevice*>(arrayIH->cell[j][k])->negpulsesum;
 					
-					if(k1 && k3)
-					{ if (k1>k3){
-					pospulsesumtotal += k2/k1-k4/k3;
-	
-					 if((k2/k1-k4/k3)<0) flippedupdateIH++;
-						
-					}
-					
-					 else if (k3>k1){
-						// negpulsesumtotal += (k4-k2) / (k4 - k1 * (k4/k3));
-						
-					pospulsesumtotal +=k4/k3-k2/k1;
-						 if((k2/k1-k4/k3)>0) flippedupdateIH++;
-					 }
-					pospulsecounttotal += 1;
-					}
-					*/
+				
 				}
-				IHnoiseunit += noisesum;
 
-				
-				/*
-				if (realpulsesum>0){
-					if(realpulsesum * noisesum == 0){
-						IHcosineunit += 0;
-						
-					}
-					else{
-						
-								
-				IHcosineunit += sqrt (multsum*multsum /(noisesum * realpulsesum) );
-				*/
-					
-						/*
-				if((noisesum * realpulsesum) > 0) {
-				IHcosineunit += sqrt (multsum*multsum /(noisesum * realpulsesum) );
-				}
-						else
-						{zeroupdateIH +=1;}
-						
-						
-					}
-				relativeratioIH += sqrt(noisesum/ realpulsesum);
-				}
-				else {zeroupdateIH +=1;}
-				*/
-				/*
-				if (realpulsesum>0){
-			
-				IHnoiseunit += noisesum;
-					
-					if(noisypulsesum == 0){
-						IHcosineunit += 0;
-					}
-					else{
-				IHcosineunit += sqrt (multsum*multsum /(noisypulsesum * realpulsesum) );
-						
-					}
-					
-				IHupdatecount++;
-				
-			
-				}
-				*/
-			}
-				/*
-			if( IHupdatecount != 0){
-				param->IHnoise = param->IHnoise + IHnoiseunit / IHupdatecount;
-				param->IHcosine = param->IHcosine + IHcosineunit/ IHupdatecount;
-			}
-				else{
-					param -> IHnoupdate++;
-				}*/
 				loc0noiseIH += sqrtl(loc0noiseunit);
 				loc1noiseIH += sqrtl(loc1noiseunit);
 				loc2noiseIH += sqrtl(loc2noiseunit);
@@ -1379,44 +1318,43 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 				
 				
 				if(loc0noiseIH>1000000000 ||loc1noiseIH>1000000000 ||loc2noiseIH>1000000000 ||loc3noiseIH>1000000000 || isinf(loc0noiseIH) ||isinf(loc1noiseIH) ||isinf(loc2noiseIH) ||isinf(loc3noiseIH))
-				{	while (1){
-					printf("recordidx: %d /n", int(iteration / param ->RecordPeriod));
-					for (int jjj = 0; jjj < param->nHide; jjj++) {
-				
+				{	
+					while (1){ // for debugging (previsouly, noise was calculated to be ridiculously large values)
+						printf("recordidx: %d /n", int(iteration / param ->RecordPeriod));
+						for (int jjj = 0; jjj < param->nHide; jjj++) {
+							for (int kkk = 0; kkk < param->nInput; kkk++) {
+							printf("noisypulse: %.5f, realpulse: %.5f, noise: %.5f \n",static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->noisypulse,static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->realpulse, static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->noise);
+							printf("conductanceGp: %.5f, conductanceGn: %.5f \n",static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->conductanceGp,static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->conductanceGn);
+							printf("s1[%d]: %.5f, dInput[%d]: %d \n", jjj , s1[jjj] , kkk ,dInput[i][kkk]);
+							printf("Input[%d]: %.5f conductanceprev: %.5f \n", kkk, Input[i][kkk],static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->conductancePrev );}
+						
+						}
+					}				
+				}
 
-						for (int kkk = 0; kkk < param->nInput; kkk++) {
-						printf("noisypulse: %.5f, realpulse: %.5f, noise: %.5f \n",static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->noisypulse,static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->realpulse, static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->noise);
-						printf("conductanceGp: %.5f, conductanceGn: %.5f \n",static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->conductanceGp,static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->conductanceGn);
-						printf("s1[%d]: %.5f, dInput[%d]: %d \n", jjj , s1[jjj] , kkk ,dInput[i][kkk]);
-						printf("Input[%d]: %.5f conductanceprev: %.5f \n", kkk, Input[i][kkk],static_cast<RealDevice*>(arrayIH->cell[jjj][kkk])->conductancePrev );}
-					
-					}
-				}
-					
-				}
 				if(realpulsesum == 0)
 				{param -> IHnoupdate++;}
+
 				else{
 				param->IHcosine += multsum / ( sqrtl(IHnoiseunit) * sqrtl(realpulsesum) );
 				relativeratioIH = sqrtl(IHnoiseunit / realpulsesum);
 				}
 					
 				
-		multsum = 0;
-		realpulsesum = 0;
-		loc0noiseunit =0;
-		loc1noiseunit =0;
-		loc2noiseunit =0;
-		loc3noiseunit =0;				
-			for (int j = 0; j < param->nOutput; j++) {
+				multsum = 0;
+				realpulsesum = 0;
+				loc0noiseunit =0;
+				loc1noiseunit =0;
+				loc2noiseunit =0;
+				loc3noiseunit =0;	
+							
+				for (int j = 0; j < param->nOutput; j++) {
 				
-				double noisypulsesum = 0;
-				
-				double noisesum =0;
-			
-				
-				
-				for (int k = 0; k < param->nHide; k++) {
+					double noisypulsesum = 0;	
+					double noisesum =0;
+
+					for (int k = 0; k < param->nHide; k++) {
+
 					realpulsesum = realpulsesum + static_cast<RealDevice*>(arrayHO->cell[j][k])->realpulse;
 					noisypulsesum  = noisypulsesum  + static_cast<RealDevice*>(arrayHO->cell[j][k])->noisypulse ;
 					multsum = multsum + static_cast<RealDevice*>(arrayHO->cell[j][k])->mult;
@@ -1425,83 +1363,13 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 					loc1noiseunit = loc1noiseunit + static_cast<RealDevice*>(arrayHO->cell[j][k])->loc1noise;
 					loc2noiseunit = loc2noiseunit + static_cast<RealDevice*>(arrayHO->cell[j][k])->loc2noise;
 					loc3noiseunit = loc3noiseunit + static_cast<RealDevice*>(arrayHO->cell[j][k])->loc3noise;
-					/*
-					double k1 = static_cast<RealDevice*>(arrayHO->cell[j][k])->pospulsecount;
-					double k2 = static_cast<RealDevice*>(arrayHO->cell[j][k])->pospulsesum;
-					double k3 =static_cast<RealDevice*>(arrayHO->cell[j][k])->negpulsecount;
-					double k4 =static_cast<RealDevice*>(arrayHO->cell[j][k])->negpulsesum;
-					if(k1 && k3)
-					{ if (k1>k3){
-					negpulsesumtotal += k2/k1-k4/k3;
-					 if((k2/k1-k4/k3)<0) flippedupdateHO++;
+				
 					}
-					
-					 else if (k3>k1){
-						// negpulsesumtotal += (k4-k2) / (k4 - k1 * (k4/k3));
-						
-					negpulsesumtotal +=k4/k3-k2/k1;
-						if((k2/k1-k4/k3)>0) flippedupdateHO++;
-					 }
-					negpulsecounttotal += 1;
-					}
-					
-						pospulsecounttotal +=static_cast<RealDevice*>(arrayHO->cell[j][k])->pospulsecount;
-					pospulsesumtotal +=static_cast<RealDevice*>(arrayHO->cell[j][k])->pospulsesum;
-					negpulsecounttotal +=static_cast<RealDevice*>(arrayHO->cell[j][k])->negpulsecount;
-					negpulsesumtotal +=static_cast<RealDevice*>(arrayHO->cell[j][k])->negpulsesum;
-					
-				*/	
-					
-				}
-				HOnoiseunit += noisesum;
+					HOnoiseunit += noisesum;
 
-				/*
-				if (realpulsesum>0){
-				if(noisesum == 0){
-					HOcosineunit += 0;
-							}
-					else{
-				HOcosineunit += multsum;
-						
-						
-					
-						
-					}
-					
-					relativeratioHO += sqrt(noisesum / realpulsesum);
-				}
-				else {zeroupdateHO +=1;}
-				*/
-				/*
-				if (realpulsesum>0){
 			
-				HOnoiseunit += noisesum;
-					if(noisypulsesum == 0){
-						HOcosineunit += 0;
-					}
-					else{
-				HOcosineunit += sqrt (multsum*multsum /(noisypulsesum * realpulsesum) );
-						
-						
-					
-						
-					}
-				HOupdatecount++;
-			
-					
 				}
-				*/
-			}
-				/*
-				if( HOupdatecount != 0){
-				param->HOnoise = param->HOnoise + HOnoiseunit / HOupdatecount;
-				param->HOcosine = param->HOcosine  +HOcosineunit / HOupdatecount;
-				}
-				else
-				{
-				param -> HOnoupdate++;
-				}
-				*/
+
 				loc0noiseHO += sqrtl(loc0noiseunit);
 				loc1noiseHO += sqrtl(loc1noiseunit);
 				loc2noiseHO += sqrtl(loc2noiseunit);
@@ -1509,238 +1377,215 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 				param->HOnoise +=  sqrtl(HOnoiseunit);
 				
 				if(loc0noiseHO>1000000000 ||loc1noiseHO>1000000000 ||loc2noiseHO>1000000000 ||loc3noiseHO>1000000000 || isinf(loc0noiseHO) ||isinf(loc1noiseHO) ||isinf(loc2noiseHO) ||isinf(loc3noiseHO))
-				{	while (1){
+				{	
+					while (1){
 					printf("recordidx: %d /n", int(iteration / param ->RecordPeriod));
-					for (int jjj = 0; jjj < param->nOutput; jjj++) {
-				
-
-						for (int kkk = 0; kkk < param->nHide; kkk++) {
-						printf("noisypulse: %.5f, realpulse: %.5f, noise: %.5f, conductanceGp: %.5f, conductanceGn: %.5f, s2[%d]: %.5f, a2[%d]: %.5f, conductancePrev: %.5f \n",static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->noisypulse,static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->realpulse, static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->noise,static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->conductanceGp,static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->conductanceGn,jjj, s2[jjj],kkk,a1[kkk],static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->conductancePrev );}
-					
+						for (int jjj = 0; jjj < param->nOutput; jjj++) {
+							for (int kkk = 0; kkk < param->nHide; kkk++) {
+							printf("noisypulse: %.5f, realpulse: %.5f, noise: %.5f, conductanceGp: %.5f, conductanceGn: %.5f, s2[%d]: %.5f, a2[%d]: %.5f, conductancePrev: %.5f \n",static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->noisypulse,static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->realpulse, static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->noise,static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->conductanceGp,static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->conductanceGn,jjj, s2[jjj],kkk,a1[kkk],static_cast<RealDevice*>(arrayHO->cell[jjj][kkk])->conductancePrev );
+							}
+						
+						}
 					}
-				}
 					
-				}			
+				}	
+
 				if(realpulsesum == 0)
 				{param -> HOnoupdate++;}
 				else{
 				param->HOcosine = multsum/(sqrtl(HOnoiseunit) * sqrtl(realpulsesum));
 				relativeratioHO += sqrtl(HOnoiseunit / realpulsesum);
 				}
+
 			
-			
-			
-			
-				
-			if (  iteration % param ->RecordPeriod == param ->RecordPeriod -1)
-			{	
 
-				int recordidx = iteration / param ->RecordPeriod;
-				double m1= 0;
-				double m3 = 0;
-				double m4= 0;
-				double m5= 0;
-				double m6 = 0;				
-				double mm1 =0;				
-				double mm3 = 0;
-				double	m2=0;
-				// double m3= pospulsesumtotal / pospulsecounttotal;//(IHcount==0)? 1:param->IHcosine/IHcount;
-				// printf("%.2f, %.2f", pospulsesumtotal, pospulsecounttotal);
-				// double m4 =negpulsesumtotal / negpulsecounttotal;//(HOcount==0)? 1: param->HOcosine/HOcount;
+				// noise record (only at certain iterations)
+				if ( iteration % param ->RecordPeriod == param ->RecordPeriod -1)
+				{	
 
-				double m33 =0;
-				double m44=0;
-				double m55=0;
-				double m66 =0;
-				 
+					int recordidx = iteration / param ->RecordPeriod;
+					double m1= 0;
+					double m3 = 0;
+					double m4= 0;
+					double m5= 0;
+					double m6 = 0;				
+					double mm1 =0;				
+					double mm3 = 0;
+					double	m2=0;
+					double m33 =0;
+					double m44=0;
+					double m55=0;
+					double m66 =0;
+					double mm2 =0;
+					double mm4=0;
 
-				double mm2 =0;
+					if ((param ->RecordPeriod - param->IHnoupdate) !=0){
+					m1= param->IHnoise*100.0;
+					m3 = loc0noiseIH*100.0;
+					m4= loc1noiseIH*100.0;
+					m5= loc2noiseIH*100.0;
+					m6 = loc3noiseIH*100.0;				
+					mm1 = relativeratioIH;				
+					mm3 = param->IHcosine;
+					}
 
-				double mm4=0;
-				/*
-				double IHcount = param ->RecordPeriod - param -> IHnoupdate;
-				double HOcount = param ->RecordPeriod - param -> HOnoupdate; */
-				if ((param ->RecordPeriod - param->IHnoupdate) !=0){
-				m1= param->IHnoise*100.0;
-				m3 = loc0noiseIH*100.0;
-				m4= loc1noiseIH*100.0;
-				m5= loc2noiseIH*100.0;
-				m6 = loc3noiseIH*100.0;				
-				mm1 = relativeratioIH;				
-				mm3 = param->IHcosine;
-				}
-				else
-				{
-				m1 = 0;
-				m3 = 0;
-				m4= 0;
-				m5= 0;
-				m6= 0;
-				mm1= 0;
-				mm3= 0;
-				}
-				if ((param ->RecordPeriod - param->HOnoupdate) !=0){
-				m2=param->HOnoise*100.0;
-				// double m3= pospulsesumtotal / pospulsecounttotal;//(IHcount==0)? 1:param->IHcosine/IHcount;
-				// printf("%.2f, %.2f", pospulsesumtotal, pospulsecounttotal);
-				// double m4 =negpulsesumtotal / negpulsecounttotal;//(HOcount==0)? 1: param->HOcosine/HOcount;
+					else {
+					m1 = 0;
+					m3 = 0;
+					m4= 0;
+					m5= 0;
+					m6= 0;
+					mm1= 0;
+					mm3= 0;
+					}
 
-				m33 = loc0noiseHO*100.0;
-				m44= loc1noiseHO*100.0;
-				m55= loc2noiseHO*100.0;
-				m66 = loc3noiseHO*100.0;
-				 
-
-				mm2 = relativeratioHO;
-
-				mm4 = param->HOcosine;
+					if ((param ->RecordPeriod - param->HOnoupdate) !=0) {
+					m2=param->HOnoise*100.0;
+					m33 = loc0noiseHO*100.0;
+					m44= loc1noiseHO*100.0;
+					m55= loc2noiseHO*100.0;
+					m66 = loc3noiseHO*100.0;
+					mm2 = relativeratioHO;
+					mm4 = param->HOcosine;
+					}
 					
-				}
-				
-				else{
-				m2= 0;
-				// double m3= pospulsesumtotal / pospulsecounttotal;//(IHcount==0)? 1:param->IHcosine/IHcount;
-				// printf("%.2f, %.2f", pospulsesumtotal, pospulsecounttotal);
-				// double m4 =negpulsesumtotal / negpulsecounttotal;//(HOcount==0)? 1: param->HOcosine/HOcount;
+					else{
+					m2= 0;
+					m33= 0;
+					m44= 0;
+					m55=0;
+					m66 =0;
+					mm2 = 0;
+					mm4 = 0;
+					}
 
-				m33= 0;
-				m44= 0;
-				m55=0;
-				m66 =0;
-				 
+					fstream read;
+					printf("[Recordidx : %d] IHnoise : %.2f, HOnoise: %.2f, loc0noise: %.2f, %.2f loc1noise: %.2f, %.2f  loc2noise: %.2f, %.2f  loc3noise: %.2f , %.2f  / " , recordidx, m1, m2, m3,m33,m4, m44,m5,m55, m6, m66);
+					char str[1024];
+					sprintf(str, "noise_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
+					read.open(str,fstream::app);
+					read <<epoch<<", "<<recordidx<<", "<<param ->RecordPeriod<<", "<<m1<<", "<<m2 <<", "<<m3<<", "<<m33<<", "<<m4<<", "<<m44<<", "<<m5<<", "<<m55<<", "<<m6<<", "<<m66<<", "<<(param ->RecordPeriod - param->IHnoupdate)<<", "<<(param ->RecordPeriod - param->HOnoupdate)<<endl;
+					fstream read2;
+					printf("[Recordidx : %d] relativeratioIH : %.2f, relativeratioHO: %.2f, IHcosine: %.2f, HOcosine: %.2f / " , recordidx, mm1, mm2, mm3,mm4);
+					char str2[1024];
+					sprintf(str2, "cosine_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
+					read2.open(str2, fstream::app);
+					read2 <<epoch<<", "<<recordidx<<", "<<param ->RecordPeriod<<", "<<mm1<<", "<<mm2 <<", "<<mm3<<", "<<mm4<<endl;
+					
+					param->IHnoise=0;
+					param->HOnoise=0;
+					param->HOcosine=0;
+					param->IHcosine=0;
+					param -> IHnoupdate = 0;
+					param -> HOnoupdate=0;
 
-				mm2 = 0;
-
-				mm4 = 0;
-				}
-				fstream read;
-				printf("[Recordidx : %d] IHnoise : %.2f, HOnoise: %.2f, loc0noise: %.2f, %.2f loc1noise: %.2f, %.2f  loc2noise: %.2f, %.2f  loc3noise: %.2f , %.2f  / " , recordidx, m1, m2, m3,m33,m4, m44,m5,m55, m6, m66);
-				char str[1024];
-				sprintf(str, "noise_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
-			 	read.open(str,fstream::app);
-			 	read <<epoch<<", "<<recordidx<<", "<<param ->RecordPeriod<<", "<<m1<<", "<<m2 <<", "<<m3<<", "<<m33<<", "<<m4<<", "<<m44<<", "<<m5<<", "<<m55<<", "<<m6<<", "<<m66<<", "<<(param ->RecordPeriod - param->IHnoupdate)<<", "<<(param ->RecordPeriod - param->HOnoupdate)<<endl;
-				fstream read2;
-				printf("[Recordidx : %d] relativeratioIH : %.2f, relativeratioHO: %.2f, IHcosine: %.2f, HOcosine: %.2f / " , recordidx, mm1, mm2, mm3,mm4);
-				char str2[1024];
-				sprintf(str2, "cosine_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
-			 	read2.open(str2, fstream::app);
-			 	read2 <<epoch<<", "<<recordidx<<", "<<param ->RecordPeriod<<", "<<mm1<<", "<<mm2 <<", "<<mm3<<", "<<mm4<<endl;
-				
-				param->IHnoise=0;
-				param->HOnoise=0;
-				param->HOcosine=0;
-				param->IHcosine=0;
-				param -> IHnoupdate = 0;
-				param -> HOnoupdate=0;
-				/*
-					pospulsecounttotal =0;
-					pospulsesumtotal  =0;
-					negpulsecounttotal =0;
-					negpulsesumtotal =0;
-				flippedupdateIH=0;
-					flippedupdateHO=0;
-					*/
-				loc0noiseIH=0;
-				loc1noiseIH=0;
-				loc2noiseIH=0;
-				loc3noiseIH=0;
-				
-				loc0noiseHO=0;
-				loc1noiseHO=0;
-				loc2noiseHO=0;
-				loc3noiseHO=0;
-				
-				relativeratioIH=0;
-				relativeratioHO=0;
-				zeroupdateIH=0;
-				zeroupdateHO=0;
+					loc0noiseIH=0;
+					loc1noiseIH=0;
+					loc2noiseIH=0;
+					loc3noiseIH=0;
+					
+					loc0noiseHO=0;
+					loc1noiseHO=0;
+					loc2noiseHO=0;
+					loc3noiseHO=0;
+					
+					relativeratioIH=0;
+					relativeratioHO=0;
+					zeroupdateIH=0;
+					zeroupdateHO=0;
 		
-				
-				
 
-				
-
-			}
+				}
 				
 			}	
-			
-			
-						if(param -> WeightTrack){
-							int epoch = int(iteration/8000)+1;
-				if(iteration % param -> WeightTrackPeriod == param -> WeightTrackPeriod -1){
-				double averageGpIH=0;
-				double count1=0;
-				double averageGnIH=0;
-				double count2=0;
-				double averageGpHO=0;
-				double count3=0;
-				double averageGnHO=0;
-				double count4=0;
-				double Gth1crossIH=0;
-				double Gth1crossHO=0;
-					int recordidx = iteration/param -> WeightTrackPeriod;
-						for (int j = 0; j < param->nHide; j++) {
-					for (int k = 0; k < param->nInput; k++) {
-						Gth1crossIH += static_cast<RealDevice*>(arrayIH->cell[j][k])->Gth1cross;
-						static_cast<RealDevice*>(arrayIH->cell[j][k])->Gth1cross = 0;
-						if(weight1[j][k]<=0)
-						{
-						averageGpIH += static_cast<RealDevice*>(arrayIH->cell[j][k])->conductanceGp;
-						count1++;
-						
-						}
-						
-						else 
-						{
-						averageGnIH += static_cast<RealDevice*>(arrayIH->cell[j][k])->conductanceGn;
-							count2++;
-						}
-						
-					
-					}
-						}
-						
-							for (int j = 0; j < param->nOutput; j++) {
-					for (int k = 0; k < param->nHide; k++) {
-						Gth1crossHO += static_cast<RealDevice*>(arrayHO->cell[j][k])->Gth1cross;
-						static_cast<RealDevice*>(arrayHO->cell[j][k])->Gth1cross = 0;
-						if(weight1[j][k]<=0)
-						{
-						averageGpHO += static_cast<RealDevice*>(arrayHO->cell[j][k])->conductanceGp;
-							count3++;
-						}
-						
-						else 
-						{
-						averageGnHO += static_cast<RealDevice*>(arrayHO->cell[j][k])->conductanceGn;
-							count4++;
-						}
-					}
-							}
-				printf("[Recordidx : %d] IHGp : %.2f, IHGn: %.2f, HOGp: %.2f, HOGn: %.2f / " , recordidx, averageGpIH/count1, averageGnIH/count2, averageGpHO/count3, averageGnHO/count4 );
-				printf("[Recordidx : %d] IHcross : %.2f, HOcross: %.2f / " , recordidx,Gth1crossIH, Gth1crossHO);
-				fstream read;
+			// Weight Distribution Track
+			if(param -> WeightDistribution){
+
+				int epoch = (iteration/8000)+1;
+
+				if (epoch%10==0){
+					fstream read;
 					char str[1024];
-				sprintf(str, "crossover_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
-			 	read.open(str,fstream::app);
-			 	read <<epoch<<", "<<recordidx<<", "<<param -> WeightTrackPeriod<<", "<<Gth1crossIH<<", "<<Gth1crossHO<<endl;
+					sprintf(str, "WeightDistribution_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
+					read.open(str,fstream::app);
+					read <<epoch<<", ";
+					for (int j = 0; j < param->nHide; j++) {
+						for (int k = 0; k < param->nInput; k++) {
+							read <<weight1[j][k]<<", ";
+						}
+					}
+					for (int j = 0; j < param->nOutput; j++) {
+						for (int k = 0; k < param->nHide; k++) {
+							read <<weight2[j][k]<<", ";
+						}
+					}
+					read<<endl;
+				}
+			}
+
+			// Weight track
+			if(param -> WeightTrack){
+				int epoch = int(iteration/8000)+1;
+				if(iteration % param -> WeightTrackPeriod == param -> WeightTrackPeriod -1){
+					double averageGpIH=0;
+					double count1=0;
+					double averageGnIH=0;
+					double count2=0;
+					double averageGpHO=0;
+					double count3=0;
+					double averageGnHO=0;
+					double count4=0;
+					double Gth1crossIH=0;
+					double Gth1crossHO=0;
+					int recordidx = iteration/param -> WeightTrackPeriod;
+
+					for (int j = 0; j < param->nHide; j++) {
+						for (int k = 0; k < param->nInput; k++) {
+							Gth1crossIH += static_cast<RealDevice*>(arrayIH->cell[j][k])->Gth1cross;
+							static_cast<RealDevice*>(arrayIH->cell[j][k])->Gth1cross = 0;
+							if(weight1[j][k]<=0)
+								{
+								averageGpIH += static_cast<RealDevice*>(arrayIH->cell[j][k])->conductanceGp;
+								count1++;
+								}
+								
+							else 
+								{
+								averageGnIH += static_cast<RealDevice*>(arrayIH->cell[j][k])->conductanceGn;
+									count2++;
+								}
+						}
+					}
+						
+					for (int j = 0; j < param->nOutput; j++) {
+						for (int k = 0; k < param->nHide; k++) {
+							Gth1crossHO += static_cast<RealDevice*>(arrayHO->cell[j][k])->Gth1cross;
+							static_cast<RealDevice*>(arrayHO->cell[j][k])->Gth1cross = 0;
+							if(weight1[j][k]<=0)
+								{
+								averageGpHO += static_cast<RealDevice*>(arrayHO->cell[j][k])->conductanceGp;
+								count3++;
+								}
+						
+							else 
+								{
+								averageGnHO += static_cast<RealDevice*>(arrayHO->cell[j][k])->conductanceGn;
+								count4++;
+								}
+						}
+					}
+
+					printf("[Recordidx : %d] IHGp : %.2f, IHGn: %.2f, HOGp: %.2f, HOGn: %.2f / " , recordidx, averageGpIH/count1, averageGnIH/count2, averageGpHO/count3, averageGnHO/count4 );
+					printf("[Recordidx : %d] IHcross : %.2f, HOcross: %.2f / " , recordidx,Gth1crossIH, Gth1crossHO);
+					fstream read;
+					char str[1024];
+					sprintf(str, "crossover_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
+					read.open(str,fstream::app);
+					read <<epoch<<", "<<recordidx<<", "<<param -> WeightTrackPeriod<<", "<<Gth1crossIH<<", "<<Gth1crossHO<<endl;
 				}
 				
 				
 			}
-			
-			/// conductance saturation management: Full-Reset (end) /// 
-			
-			/// new conductance saturation management ///
-			
-			/* if(param -> RefreshAlgorithm = "Refresh"){
-				
-		
-				
-			} */
-			
-		       /// new conductance saturation management (end) ///
-			
 
 			
 			
