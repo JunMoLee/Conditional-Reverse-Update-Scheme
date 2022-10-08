@@ -53,15 +53,16 @@ public:
 	double wireGateCapRow;	// Cap of 1T1R WL cap
 	double wireCapBLCol;	// Cap of 1T1R BL cap in digital eNVM
 	double readEnergy, writeEnergy;
-        double transferReadEnergy, transferWriteEnergy, transferEnergy; // the transfer energy for the hybrid cell
+    double transferReadEnergy, transferWriteEnergy, transferEnergy; // the transfer energy for the hybrid cell
 	int numCellPerSynapse;	// For SRAM to use redundant cells to represent one synapse
 	double writeEnergySRAMCell;	// Write energy per SRAM cell (will move this to SRAM cell level in the future)
 	bool **weightChange;	// Specify if the weight value will change or not during weight update (for SRAM and digital eNVM)
-        int refColumnNumber;
-        double p;
-        double n;
+    int refColumnNumber;
+    double p;
+    double n;
+
 	/* Constructor */
-        // code modified
+    // code modified
 	Array(int arrayColSize, int arrayRowSize, int wireWidth, double lp, double ln)
 	{  
         this->arrayRowSize = arrayRowSize;
@@ -74,7 +75,7 @@ public:
         transferReadEnergy = transferWriteEnergy = 0;
         transferEnergy = 0;
 
-        /* Initialize weightChange */
+    /* Initialize weightChange */
 	weightChange = new bool*[arrayColSize];
 	for (int col=0; col<arrayColSize; col++) {
 	weightChange[col] = new bool[arrayRowSize];
