@@ -91,7 +91,7 @@ double Array::ReadCell(int x, int y, char* mode) {
 			} 
             else 
             {
-				cellCurrent = readVoltage *static_cast<eNVM*>(cell[x][y])->conductance;//+ totalWireResistance);
+				cellCurrent = readVoltage *static_cast<eNVM*>(cell[x][y])->conductance;//+ totalWireResistance); // modified the original code for the infinite current problem
 			}
 		}
         //printf("The current is %.4e\n",cellCurrent);
@@ -187,33 +187,37 @@ void Array::WriteCell(int x, int y, double deltaWeight, double weight, double ma
         {	// Preparation stage (ideal write)
             //printf("initialize the conductance\n");
 			
-		        double avgMaxConductance = static_cast<eNVM*>(cell[x][y])->avgMaxConductance;
+		    double avgMaxConductance = static_cast<eNVM*>(cell[x][y])->avgMaxConductance;
 			double avgMinConductance = static_cast<eNVM*>(cell[x][y])->avgMinConductance;
 			double pmaxConductance = static_cast<eNVM*>(cell[x][y])->pmaxConductance;
 			double pminConductance = static_cast<eNVM*>(cell[x][y])->pminConductance;
-		        double nmaxConductance = static_cast<eNVM*>(cell[x][y])->nmaxConductance;
+		    double nmaxConductance = static_cast<eNVM*>(cell[x][y])->nmaxConductance;
 			double nminConductance = static_cast<eNVM*>(cell[x][y])->nminConductance;
 			double conductanceGp = static_cast<eNVM*>(cell[x][y])->conductanceGp;
 			double conductanceGn = static_cast<eNVM*>(cell[x][y])->conductanceGn;
-		        double refConductance= static_cast<eNVM*>(cell[x][y])->refConductance;
+		    double refConductance= static_cast<eNVM*>(cell[x][y])->refConductance;
 			double totalcondrange = pmaxConductance + nmaxConductance - pminConductance - nminConductance;
-	                double pcondrange = pmaxConductance - pminConductance;
-	                double ncondrange = nmaxConductance - nminConductance;
-		        double conductance = 0;
+	        double pcondrange = pmaxConductance - pminConductance;
+	        double ncondrange = nmaxConductance - nminConductance;
+		    double conductance = 0;
 		        
 		        
 		      
             // ? should add "+minConductance"?
 			//deltaWeight = 2 * deltaWeight; 
-		 double variation =0;
-                if(param->c2cvariation==1){
-                                                double sigmaCtoC = param->cratio/1000* 10;   // Sigma of cycle-to-cycle weight update vairation: defined as the percentage of conductance range
-                        std::normal_distribution<double> *gaussian_dist3;
-                                                gaussian_dist3 = new std::normal_distribution<double>(0, sigmaCtoC);    // Set up mean and stddev for cycle-to-cycle weight update vairation
-                                         std::mt19937 gen;
-                                         double numPulse = truncate(deltaWeight, 100)*100;
-                                         variation = (*gaussian_dist3)(gen)*sqrt(abs(numPulse));
-                }
+
+			/* c2c variation during refresh implementation */
+		 	double variation =0;
+
+			if(param->c2cvariation==1){
+
+					double sigmaCtoC = param->cratio/1000* 10;   // Sigma of cycle-to-cycle weight update vairation: defined as the percentage of max conductance range
+					std::normal_distribution<double> *gaussian_dist3;
+					gaussian_dist3 = new std::normal_distribution<double>(0, sigmaCtoC);    // Set up mean and stddev for cycle-to-cycle weight update vairation
+					std::mt19937 gen;
+					double numPulse = truncate(deltaWeight, 100)*100; // assume conductance step 100
+					variation = (*gaussian_dist3)(gen)*sqrt(abs(numPulse));
+			}
 
 		
 	
