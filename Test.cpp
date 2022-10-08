@@ -46,6 +46,9 @@
 #include "Mapping.h"
 #include "NeuroSim.h"
 #include "Cell.h"
+#include <string>
+#include <fstream>
+using namespace std;
 
 extern Param *param;
 
@@ -84,7 +87,18 @@ void Validate() {
 	double outN2[param->nOutput];   // Net input to the output layer [param->nOutput]
 	double a2[param->nOutput];  // Net output of output layer [param->nOutput]
 	double tempMax;
+	double tempMax2;
 	int countNum;
+	int countNum2;
+	double TP_FN[10][2];
+
+	// TP_FN initialization
+	for (int index1=0; index1<10; index1++){
+		for (int index2=0; index2<2; index2++){
+		TP_FN[index1][index2]=0;
+		}
+		
+	}
 	correct = 0;
 
 	double sumArrayReadEnergyIH = 0;   // Use a temporary variable here since OpenMP does not support reduction on class member
@@ -103,7 +117,7 @@ void Validate() {
 	    readPulseWidthHO = static_cast<eNVM*>(arrayHO->cell[0][0])->readPulseWidth;
     }
     
-    #pragma omp parallel for private(outN1, a1, da1, outN2, a2, tempMax, countNum, numBatchReadSynapse) reduction(+: correct, sumArrayReadEnergyIH, sumNeuroSimReadEnergyIH, sumArrayReadEnergyHO, sumNeuroSimReadEnergyHO, sumReadLatencyIH, sumReadLatencyHO)
+    #pragma omp parallel for private(outN1, a1, da1, outN2, a2, tempMax, tempMax2, countNum, countNum2, numBatchReadSynapse) reduction(+: correct, sumArrayReadEnergyIH, sumNeuroSimReadEnergyIH, sumArrayReadEnergyHO, sumNeuroSimReadEnergyHO, sumReadLatencyIH, sumReadLatencyHO)
 	for (int i = 0; i < param->numMnistTestImages; i++)
 	{
 		// Forward propagation
@@ -210,7 +224,7 @@ void Validate() {
                     }
                 }
 				a1[j] = sigmoid(outN1[j]);
-				da1[j] = round_th(a1[j]*(param->numInputLevel-1), param->Hthreshold);
+				da1[j] = round_th(a1[j]*(2-1), param->Hthreshold);
 			}
 
 			numBatchReadSynapse = (int)ceil((double)param->nHide/param->numColMuxed);
@@ -241,6 +255,7 @@ void Validate() {
 
 		/* Second layer from hidden layer to the output layer */
 		tempMax = 0;
+		tempMax2 = 0;
 		countNum = 0;
 		std::fill_n(outN2, param->nOutput, 0);
 		std::fill_n(a2, param->nOutput, 0);
@@ -259,8 +274,8 @@ void Validate() {
 				}else if (AnalogNVM *temp = dynamic_cast<AnalogNVM*>(arrayHO->cell[0][0]))  // Analog eNVM
 						sumArrayReadEnergyHO += arrayHO->wireGateCapRow * techHO.vdd * techHO.vdd * param->nHide; // All WLs open
 
-				for (int n=0; n<param->numBitInput; n++) {
-					double pSumMaxAlgorithm = pow(2, n) / (param->numInputLevel - 1) * arrayHO->arrayRowSize;    // Max algorithm partial weighted sum for the nth vector bit (if both max input value and max weight are 1)
+				for (int n=0; n<1; n++) {
+					double pSumMaxAlgorithm = pow(2, n) / (2 - 1) * arrayHO->arrayRowSize;    // Max algorithm partial weighted sum for the nth vector bit (if both max input value and max weight are 1)
 					if (AnalogNVM *temp = dynamic_cast<AnalogNVM*>(arrayHO->cell[0][0])) {  // Analog NVM
 						double Isum = 0;    // weighted sum current
 						double IsumMax = 0; // Max weighted sum current
@@ -350,6 +365,10 @@ void Validate() {
 					tempMax = a2[j];
 					countNum = j;
 				}
+				if (testOutput[i][j]> tempMax2) {
+					tempMax2 = testOutput[i][j];
+					countNum2 = j;
+				}
 			}
 
 			numBatchReadSynapse = (int)ceil((double)param->nOutput/param->numColMuxed);
@@ -379,12 +398,48 @@ void Validate() {
 					tempMax = a2[j];
 					countNum = j;
 				}
+				if (testOutput[i][j]> tempMax2) {
+					tempMax2 = testOutput[i][j];
+					countNum2 = j;
+				}
 			}
 		}
-		if (testOutput[i][countNum] == 1) {
-			correct++;
+
+		/////////////////////////////////////////////////////////
+		/* TP, FN record */
+		if (param->TP_FN_record==1){
+			// countnum -> output
+			// mm such that testOuput[i][mm]==1 -> label
+			if (testOutput[i][countNum] == 1) {
+				correct++;
+				TP_FN[countNum][0]++;
+
+			}
+
+			else{
+				TP_FN[countNum2][1]++;
+
+			}
+
+                                                 
+		
 		}
+		/////////////////////////////////////////////////////////
+		
+		else{
+		if (testOutput[i][countNum] == 1) {
+		correct++;
+		}
+
+
+		}
+
+
+	
 	}
+
+
+	
 	if (!param->useHardwareInTraining) {    // Calculate the classification latency and energy only for offline classification
 		arrayIH->readEnergy += sumArrayReadEnergyIH;
 		subArrayIH->readDynamicEnergy += sumNeuroSimReadEnergyIH;
@@ -393,5 +448,37 @@ void Validate() {
 		subArrayIH->readLatency += sumReadLatencyIH;
 		subArrayHO->readLatency += sumReadLatencyHO;
 	}
+
+		if (param->TP_FN_record==1){
+
+		double NL_LTP_Gp = param->param_gp;
+	    double NL_LTD_Gp = param->param_gn;
+		double LA = param->alpha1;
+		int reverseperiod = param->newUpdateRate;
+		int refperiod = param->RefPeriod;
+		double Gth1 = param -> Gth1;
+		double revlr = LA / param -> ratio ;
+		fstream read;
+		char str[1024];
+		sprintf(str, "Sensitivity_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
+		read.open(str,fstream::app);
+		for (int sens_index=0; sens_index<10; sens_index++){
+		read <<TP_FN[sens_index][0]/(TP_FN[sens_index][0]+TP_FN[sens_index][1])<<", ";
+		}
+		read<<(double)correct/param->numMnistTestImages*100;
+		read<<endl;
+
+		fstream read2;
+		char str2[1024];
+		sprintf(str2, "numberdata_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
+		read2.open(str2,fstream::app);
+		for (int sens_index=0; sens_index<10; sens_index++){
+		read2 <<TP_FN[sens_index][0]<<","<<TP_FN[sens_index][1]<<", ";
+		}
+		read2<<(double)correct/param->numMnistTestImages*100;
+		read2<<endl;
+
+		}
 }
+
 
