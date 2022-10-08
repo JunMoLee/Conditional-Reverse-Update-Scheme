@@ -41,46 +41,61 @@
 #include "Param.h"
 
 Param::Param() {
+
 	/* MNIST dataset */
+
 	numMnistTrainImages = 60000;// # of training images in MNIST
 	numMnistTestImages = 10000;	// # of testing images in MNIST
-	const double
-        l=30;
+
 	/* Algorithm parameters */
+
 	numTrainImagesPerEpoch = 8000;	// # of training images per epoch
-	totalNumEpochs = 125;	// Total number of epochs
+	totalNumEpochs = 100;	// Total number of epochs
 	interNumEpochs = 1;		// Internal number of epochs (print out the results every interNumEpochs)
 	nInput = 400;     // # of neurons in input layer
 	nHide = 100;      // # of neurons in hidden layer
 	nOutput = 10;     // # of neurons in output layer
-	alpha1 =l/100.0;	// Learning rate for the weights from input to hidden layer
-	alpha2 =l/2.0/100.0;	// Learning rate for the weights from hidden to output layer
-	const double
-	revlr=15;
-	ratio = alpha1 / (revlr/100);
 	maxWeight = 1;	// Upper bound of weight value
 	minWeight = -1;	// Lower bound of weight value
+
     /*Optimization method 
+
     Available option include: "SGD", "Momentum", "Adagrad", "RMSprop" and "Adam"*/
+
     optimization_type = "SGD";
-        ReverseUpdate = 0;
-	FullRefresh= 1;
-	Reference = 0;
+
+	/* nonlinearity setting */ 
+
+	param_gp=1; // LTP nonlinearity
+	param_gn=-9; // LTD nonlinearity
+
+	/* weight, synapse distribution record */
+
 	RefPeriod = 100;
 	Record = 0;
 	RecordPeriod = 200;
 	WeightTrack = 0;
 	WeightTrackPeriod=200;
-	c2cvariation=0;
 	LocationTrack=0;
 	LocationTrackPeriod=200;
-        const double
-        cratioo=6;
-	cratio=cratioo;
-	Gth1 = -1;
-	Gth2 = 9;
+	WeightDistribution=0;
+
+	/* c2c, reference, refresh, reverse update period */
+
+	cratio=0; // for write variation
+	c2cvariation=0; // c2c variation turn on/off
+    Reference = 0; // reference turn on/off (turn on:1, turon off:0, the same applies for below)
+	FullRefresh= 0; // refresh function turn on/off
+	RefreshRate = 2; // refresh period
+	ReverseUpdate = 1; // reverse update function turn on/off
+	newUpdateRate = 2; // reverse update period
+
+	Gth1 = -1; // Gth for optimization
+	Gth2 = 9; // not used
+	TP_FN_record=0; // TP/FN  (at Test.cpp)
 
 	/* Hardware parameters */
+
 	useHardwareInTrainingFF = true;   // Use hardware in the feed forward part of training or not (true: realistic hardware, false: ideal software)
 	useHardwareInTrainingWU = true;   // Use hardware in the weight update part of training or not (true: realistic hardware, false: ideal software)
 	useHardwareInTraining = useHardwareInTrainingFF || useHardwareInTrainingWU;    // Use hardware in the training or not
@@ -101,118 +116,153 @@ Param::Param() {
 	arrayWireWidth = 100;	// Array wire width (nm)
 	processNode = 32;	// Technology node (nm)
 	clkFreq = 2e9;		// Clock frequency (Hz)
-const int
-ref=1;
-	RefreshRate = pow(2,ref);
-	
-	
-	const int 
-	nur=2;
-	newUpdateRate = nur; // rate of new update algorithm implementation (per # of images)
+
+
+// additional code for automization using bash script, not necessary
 const int
 a=0;
-	
-const int
-gths=1;
-	
+
+
+// Settings tested in paper uncomment to apply the settings
+// Optimal Gth values earned from simulation {NL(LTP), optimal Gth from grid search over 0.2-9.8}
+
+/* LR 0.15 */
+param_gn=-9;
+double scan [8][2] = {{1,1},{2,1.2},{3,1.6},{4,2.4},{5,3.4},{6,3.8},{7,6.2},{8,8.6}};
+
+const double // const define for automation
+l=15;
+alpha1 =l/100.0;	// Learning rate for the weights from input to hidden layer
+alpha2 =l/2.0/100.0;	// Learning rate for the weights from hidden to output layer
+
+// define lr during reverse update
+const double
+revlr=15;
+ratio = alpha1 / (revlr/100);
+
+// NL drift (added)
+const double
+nd=10
+;
+NL_drift=nd/10;
+use_drift=1;
+
+/* LR 0.1 */
+/*
+double scan [8][2] = {{1,0.6},{2,0.8},{3,1},{4,1.2},{5,2.2},{6,2.4},{7,3.8},{8,6.4}};
+param_gn=-9;
+
+const double // const define for automation
+l=10;
+alpha1 =l/100.0;	// Learning rate for the weights from input to hidden layer
+alpha2 =l/2.0/100.0;	// Learning rate for the weights from hidden to output layer
+
+// define lr during reverse update
+const double
+revlr=15;
+ratio = alpha1 / (revlr/100);
+*/
+
+/* LTD=-8 LR=0.1 */
+/*
+//param_gn=-8;
+//double scan [8][2] = {{1,0.8},{2,1},{3,1.6},{4,2.2},{5,2.6},{6,3.4},{7,5},{8,6.8}};
+param_gn=-9;
+
+const double // const define for automation
+l=10;
+alpha1 =l/100.0;	// Learning rate for the weights from input to hidden layer
+alpha2 =l/2.0/100.0;	// Learning rate for the weights from hidden to output layer
+
+// define lr during reverse update
+const double
+revlr=15;
+ratio = alpha1 / (revlr/100);
+*/
+
+/* RUP NL 1, 5 LR 0.1  */ 
+// {RUP, optimal Gth from grid search over 0.2-9.8, NL(LTP)}
+//param_gn=-8;
+//double scan[6][3] = {{3,4.4,5},{5,6.2,5},{10,8.4,5},{3,0.8,1},{5,1.4,1},{10,3.2,1}};
+
+/* C2C parameterlist */
+// NL(NL level) alpha1, Optimized Gth1 
+// NL1 0.3, 2.4 / NL3 0.3, 3.8 / NL5 0.1, 2.2 / NL8 0.1, 6.4 
+// double scan[3] = {0.1,0.15,0.2};
+
+////////// Common parameters //////////
+const double // const define for c2c variation
+cratioo=10;
+
+c2cvariation=0; // c2c variation turn on/off
+cratio=cratioo; // for write variation
+numBitInput = 1; // # of bits of the input data (=1 for black and white data)
+Reference=0; // reference turn on and off
+RefPeriod=1; // reference period
+ReverseUpdate = 1; // reverse update function turn on/off
+newUpdateRate= 2; // reverse update date
+FullRefresh= 0; // refresh function turn on/off
+RefreshRate = 2; // refresh perio
+
+/// Nonlinearity dependent parameters ///
 switch(a){
 case 0:
-param_gp=1;
-param_gn=-9;
+param_gp=scan[0][0];
+Gth1=scan[0][1];
+
 break;
+
 case 1:
-param_gp=2;
-param_gn=-9;
+param_gp=scan[1][0];
+Gth1=scan[1][1];
+
 break;
+
 case 2:
-param_gp=3;
-param_gn=-9;
+param_gp=scan[2][0];
+Gth1=scan[2][1];
+
 break;
+
 case 3:
-param_gp=4;
-param_gn=-9;
+param_gp=scan[3][0];
+Gth1=scan[3][1];
+
 break;
+
 case 4:
-param_gp=5;
-param_gn=-9;
+param_gp=scan[4][0];
+Gth1=scan[4][1];
+
 break;
+
 case 5:
-param_gp=6;
-param_gn=-9;
-break; }
-	
-int Gthlist [55][2];
-int idx = 0;
+param_gp=scan[5][0];
+Gth1=scan[5][1];
 
- for(int i=10;  i>=0 ; i--){
- 	for(int j=0; j<i; j++ ){
-		Gthlist[idx][0] = j;
-		Gthlist[idx][1] = i;
-		idx++;
-	}
- }
-			
-Gth1 = Gthlist[gths][0];
-Gth2 = Gthlist[gths][1]; 
+break;
+
+case 6:
+param_gp=scan[6][0];
+Gth1=scan[6][1];
+
+break;
+
+case 7:
+param_gp=scan[7][0];
+Gth1=scan[7][1];
+
+break;
+
+
+}
+	
 
 	
-const int
-select=0;
-	
-double plist [7] ={1, -9, 0.25, 0, 2, 2, 1};
-param_gp=plist[0];
-param_gn=plist[1];
-alpha1=plist[2];
-Reference=plist[3];
-RefPeriod=100;
-double scan [3] = {1,3,5};
-newUpdateRate=int(plist[5]);
-Gth1  =1+(scan[select]);
-	
-alpha2=alpha1/2;	
-ratio = alpha1/0.15;
+
+
+
 
 }
 
 
-
-/*
-const int
-select=0;
-
-switch(select){
-		
-case 0:
-		
-double plist [7] ={2, -9, 0.1, 0, 2, 2, 1}
-param_gp=plist[0];
-param_gn=plist[1];
-alpha1=plist[2];
-Reference=plist[3];
-RefPeriod=int(plist[4]);
-newUpdateRate=int(plist[5]);
-Gth  =plist[6];
-	
-alpha2=alpha1/2;	
-ratio = alpha1/0.15;
-
-break;
-		
-case 1:
-		
-double plist [7] ={2, -9, 0.1, 0, 2, 2, 1.2}
-param_gp=plist[0];
-param_gn=plist[1];
-alpha1=plist[2];
-Reference=plist[3];
-RefPeriod=int(plist[4]);
-newUpdateRate=int(plist[5]);
-Gth  =plist[6];
-	
-alpha2=alpha1/2;	
-ratio = alpha1/0.15;
-
-break;
-		
-}
-*/
