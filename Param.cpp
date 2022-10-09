@@ -188,7 +188,7 @@ const double // const define for automation
 l=10; // (30 for NL1, NL3. 10 for NL5, NL8)
 alpha1 =l/100.0;	// Learning rate for the weights from input to hidden layer
 alpha2 =l/2.0/100.0;	// Learning rate for the weights from hidden to output layer
-scan[4][2]={{1,2.4},{3, 3.8},{5, 2.2},{8, 6.4}};
+double scan[4][2]={{1,2.4},{3, 3.8},{5, 2.2},{8, 6.4}};
 	
 // define lr during reverse update
 const double
