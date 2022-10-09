@@ -120,13 +120,14 @@ Param::Param() {
 
 // additional code for automization using bash script, not necessary
 const int
-a=0;
+a=3;
 
 
-// Settings tested in paper uncomment to apply the settings
+// Settings tested in paper - uncomment to apply the settings
 // Optimal Gth values earned from simulation {NL(LTP), optimal Gth from grid search over 0.2-9.8}
 
 /* LR 0.15 */
+/*
 param_gn=-9;
 double scan [8][2] = {{1,1},{2,1.2},{3,1.6},{4,2.4},{5,3.4},{6,3.8},{7,6.2},{8,8.6}};
 
@@ -139,13 +140,7 @@ alpha2 =l/2.0/100.0;	// Learning rate for the weights from hidden to output laye
 const double
 revlr=15;
 ratio = alpha1 / (revlr/100);
-
-// NL drift (added)
-const double
-nd=10
-;
-NL_drift=nd/10;
-use_drift=1;
+*/
 
 /* LR 0.1 */
 /*
@@ -186,15 +181,32 @@ ratio = alpha1 / (revlr/100);
 //double scan[6][3] = {{3,4.4,5},{5,6.2,5},{10,8.4,5},{3,0.8,1},{5,1.4,1},{10,3.2,1}};
 
 /* C2C parameterlist */
-// NL(NL level) alpha1, Optimized Gth1 
+// NL(NL level) alpha1, Optimized Gth1 - please apply these settings
 // NL1 0.3, 2.4 / NL3 0.3, 3.8 / NL5 0.1, 2.2 / NL8 0.1, 6.4 
-// double scan[3] = {0.1,0.15,0.2};
 
+const double // const define for automation
+l=10; // (30 for NL1, NL3. 10 for NL5, NL8)
+alpha1 =l/100.0;	// Learning rate for the weights from input to hidden layer
+alpha2 =l/2.0/100.0;	// Learning rate for the weights from hidden to output layer
+scan[4][2]={{1,2.4},{3, 3.8},{5, 2.2},{8, 6.4}};
+	
+// define lr during reverse update
+const double
+revlr=15;
+ratio = alpha1 / (revlr/100);
+	
 ////////// Common parameters //////////
+// NL drift (added)
+const double
+nd=10
+;
+NL_drift=nd/10;
+use_drift=1;
+	
 const double // const define for c2c variation
-cratioo=10;
+cratioo=50;
 
-c2cvariation=0; // c2c variation turn on/off
+c2cvariation=1; // c2c variation turn on/off
 cratio=cratioo; // for write variation
 numBitInput = 1; // # of bits of the input data (=1 for black and white data)
 Reference=0; // reference turn on and off
@@ -205,64 +217,11 @@ FullRefresh= 0; // refresh function turn on/off
 RefreshRate = 2; // refresh perio
 
 /// Nonlinearity dependent parameters ///
-switch(a){
-case 0:
-param_gp=scan[0][0];
-Gth1=scan[0][1];
-
-break;
-
-case 1:
-param_gp=scan[1][0];
-Gth1=scan[1][1];
-
-break;
-
-case 2:
-param_gp=scan[2][0];
-Gth1=scan[2][1];
-
-break;
-
-case 3:
-param_gp=scan[3][0];
-Gth1=scan[3][1];
-
-break;
-
-case 4:
-param_gp=scan[4][0];
-Gth1=scan[4][1];
-
-break;
-
-case 5:
-param_gp=scan[5][0];
-Gth1=scan[5][1];
-
-break;
-
-case 6:
-param_gp=scan[6][0];
-Gth1=scan[6][1];
-
-break;
-
-case 7:
-param_gp=scan[7][0];
-Gth1=scan[7][1];
-
-break;
-
-
-}
 	
+param_gp=scan[a][0];
+Gth1=scan[a][1];
 
 	
-
-
-
-
 }
 
 
