@@ -78,7 +78,7 @@ Param::Param() {
 	WeightTrackPeriod=200;
 	LocationTrack=0;
 	LocationTrackPeriod=200;
-	WeightDistribution=0;
+	WeightDistribution=1;
 
 	/* c2c, reference, refresh, reverse update period */
 
