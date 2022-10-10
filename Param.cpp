@@ -204,9 +204,9 @@ NL_drift=nd/10;
 use_drift=0;
 	
 const double // const define for c2c variation
-cratioo=50;
+cratioo=0;
 
-c2cvariation=1; // c2c variation turn on/off
+c2cvariation=0; // c2c variation turn on/off
 cratio=cratioo; // for write variation
 numBitInput = 1; // # of bits of the input data (=1 for black and white data)
 Reference=1; // reference turn on and off
