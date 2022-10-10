@@ -198,10 +198,10 @@ ratio = alpha1 / (revlr/100);
 ////////// Common parameters //////////
 // NL drift (added)
 const double
-nd=10
+nd=0
 ;
 NL_drift=nd/10;
-use_drift=1;
+use_drift=0;
 	
 const double // const define for c2c variation
 cratioo=50;
@@ -209,8 +209,8 @@ cratioo=50;
 c2cvariation=1; // c2c variation turn on/off
 cratio=cratioo; // for write variation
 numBitInput = 1; // # of bits of the input data (=1 for black and white data)
-Reference=0; // reference turn on and off
-RefPeriod=1; // reference period
+Reference=1; // reference turn on and off
+RefPeriod=4096; // reference period
 ReverseUpdate = 1; // reverse update function turn on/off
 newUpdateRate= 2; // reverse update date
 FullRefresh= 0; // refresh function turn on/off
