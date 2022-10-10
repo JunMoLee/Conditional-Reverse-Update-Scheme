@@ -1501,7 +1501,7 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 			// Weight Distribution Track
 			if(param -> WeightDistribution){
 
-				int epoch = (iteration/8000)+1;
+				int epoch = (int)(iteration/8000)+1;
 
 				if (epoch%10==0){
 					fstream read;
