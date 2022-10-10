@@ -43,6 +43,8 @@
 #include <stdlib.h>
 #include <string>
 #include <sstream>
+
+
 #include "formula.h"
 #include "Param.h"
 #include "Array.h"
@@ -1501,9 +1503,10 @@ double s2[param->nOutput];  // Output delta from hidden layer to the output laye
 			// Weight Distribution Track
 			if(param -> WeightDistribution){
 
-				int epoch = (int)(iteration/8000)+1;
+				int epochperiod=20;
+				int epoch = int(iteration/8000)+1;
 
-				if (epoch%10==0){
+				if (iteration%(numTrain*epochperiod)==0){
 					fstream read;
 					char str[1024];
 					sprintf(str, "WeightDistribution_NL_%.2f_%.2f_Gth_%.2f_LR_%.2f_revLR_%.2f_%d_%d.csv" ,NL_LTP_Gp, NL_LTD_Gp, Gth1, LA, revlr, reverseperiod, refperiod);
@@ -1621,3 +1624,4 @@ double Adam(double gradient, double learning_rate, double momentumPrev, double v
     vt = vt/(1-BETA2);
     return -learning_rate*mt/(sqrt(vt)+EPSILON);
 }
+
